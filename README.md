@@ -14,14 +14,14 @@ After that, please run:
 
 `python -m spacy download en`
 
-### Train
+## Train
 
 
 You can now run the following:
 
 `python sentimentAnalysis.py train`
 
-### Predict
+## Predict
 
 After having trained the model, you can now run:
 
