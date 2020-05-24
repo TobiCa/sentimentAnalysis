@@ -16,10 +16,12 @@ After that, please run:
 
 ## Train
 
-
 You can now run the following:
 
 `python sentimentAnalysis.py train`
+
+
+Upon training the first time, the script will install twitter word embeddings. The file is approx. of size 1.5 GB.
 
 ## Predict
 
