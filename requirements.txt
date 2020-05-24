@@ -1,0 +1,6 @@
+flask
+flask_restful
+torch
+pandas
+torchtext
+spacy
