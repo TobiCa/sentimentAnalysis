@@ -82,6 +82,27 @@ class SentimentAnalysis():
         max_preds = preds.argmax(dim = 1)
         return max_preds.item()
 
+    def get_model_params(self):
+        model_params = {}
+        labels = {}
+        vocab = {}
+        try:
+            with open('saved/modelParams.pkl', 'rb') as f:
+                model_params = pickle.load(f)
+        except:
+            print('Model params not found in modelParam.pkl. Did you train the model yet?')
+    
+        try:
+            with open('saved/labels.pkl', 'rb') as f:
+                labels = pickle.load(f)
+        except:
+            print('Data labels not found in labels.pkl. Did you train the model yet?')
+        try:
+            with open('saved/vocab.pkl', 'rb') as f:
+                vocab = pickle.load(f)
+        except:
+            print('Vocabulary not foun din vocab.pkl. Did you train the model yet?')
+        return model_params, labels, vocab
 
     # Data must exist in ./data dir
     def load_data(self):
@@ -133,9 +154,9 @@ class SentimentAnalysis():
         self.LABEL.build_vocab(trainSet)
         print(f'Vocabulary length: {len(self.TEXT.vocab)}')
         print(f'Labels: {self.LABEL.vocab.stoi}')
-        with open('labels.pkl', 'wb') as f:
+        with open('saved/labels.pkl', 'wb') as f:
             pickle.dump(self.LABEL.vocab.itos, f)
-        with open('vocab.pkl', 'wb') as f:
+        with open('saved/vocab.pkl', 'wb') as f:
             pickle.dump(self.TEXT.vocab, f)
 
 
@@ -164,7 +185,7 @@ class SentimentAnalysis():
             'pad_idx': self.TEXT.vocab.stoi[self.TEXT.pad_token]
         }
         model = CNN(**model_params)
-        with open('modelParams.pkl', 'wb') as f:
+        with open('saved/modelParams.pkl', 'wb') as f:
             pickle.dump(model_params, f)
         optimizer = optim.Adam(model.parameters())
         criterion = nn.CrossEntropyLoss()
@@ -255,7 +276,7 @@ if (len(sys.argv) > 1 and sys.argv[1] == 'train'):
         
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(model.state_dict(), 'sentimentModel.pt')
+            torch.save(model.state_dict(), 'model/sentimentModel.pt')
             print('Saved new model')
         
         print(f'Epoch: {epoch+1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
@@ -264,7 +285,7 @@ if (len(sys.argv) > 1 and sys.argv[1] == 'train'):
 
     print('Testing model on test data...')
 
-    model.load_state_dict(torch.load('sentimentModel.pt'))
+    model.load_state_dict(torch.load('model/sentimentModel.pt'))
 
     test_loss, test_acc = sentimentAnalysis.evaluate(model, test_iterator, criterion)
 
@@ -273,19 +294,11 @@ if (len(sys.argv) > 1 and sys.argv[1] == 'train'):
 if (len(sys.argv) > 1 and sys.argv[1] == 'predict'):
     if (sys.argv[2] and len(sys.argv[2])):
         sentimentAnalysis = SentimentAnalysis()
-        model_params = {}
-        labels = {}
-        vocab = {}
-        with open('modelParams.pkl', 'rb') as f:
-            model_params = pickle.load(f)
-        with open('labels.pkl', 'rb') as f:
-            labels = pickle.load(f)
-        with open('vocab.pkl', 'rb') as f:
-            vocab = pickle.load(f)
+        model_params, labels, vocab = sentimentAnalysis.get_model_params()
 
         if (len(model_params) and len(labels)):
             model = CNN(**model_params)
-            model.load_state_dict(torch.load('sentimentModel.pt'))
+            model.load_state_dict(torch.load('model/sentimentModel.pt'))
             model.eval()
             pred_class = sentimentAnalysis.predict_class(model, sys.argv[2], vocab)
             print(f'The predicted sentiment is: {labels[pred_class]}')
@@ -293,10 +306,3 @@ if (len(sys.argv) > 1 and sys.argv[1] == 'predict'):
             print('Could not find model parameters or labels in current directory. Did you train a model before trying this?')
     else:
         print('Oops, seems like you did not pass a sentence for prediction!')
-
-if (len(sys.argv) < 2):
-    print('Provide a parameter please. either:')
-    print('python sentimentAnalysis.py train')
-    print('or')
-    print("python sentimentAnalysis.py predict 'string to predict sentiment of'")
-    print('Remember to use python3')
